@@ -3,6 +3,7 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
+                sh 'whoami'
                 sh '''
                 python3 -m venv venv
                 ./venv/bin/pip install -r requirements.txt
