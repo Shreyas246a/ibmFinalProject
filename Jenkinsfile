@@ -16,13 +16,13 @@ pipeline {
             }
         }
 
-        stage('Start Minikube') {
-            steps {
-                script {
-                    sh "minikube start"
-                }
-            }
-        }
+        // stage('Start Minikube') {
+        //     steps {
+        //         script {
+        //             sh "minikube start"
+        //         }
+        //     }
+        // }
 
         stage('Build Docker Image') {
             steps {
