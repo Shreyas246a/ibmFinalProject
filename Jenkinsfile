@@ -19,6 +19,7 @@ pipeline {
         stage('Start Minikube') {
             steps {
                 script {
+                    sh"export MINIKUBE_HOME=/var/lib/jenkins"
                     sh "minikube start driver=none"
                 }
             }
