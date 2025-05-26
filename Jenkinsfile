@@ -3,20 +3,20 @@ pipeline {
     stages {
         stage('Setup') {
             steps {
-                bat "pip install -r requirements.txt"
+                sh "pip install -r requirements.txt"
             }
         }
 
         stage('Test') {
             steps {
-                bat "pytest"
+                sh "pytest"
             }
         }
 
         stage('Start Minikube') {
             steps {
                 script {
-                    bat "minikube start"
+                    sh "minikube start"
                 }
             }
         }
@@ -24,11 +24,11 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    def imageExists = bat(script: 'docker images -q flask-app:latest', returnStdout: true).trim()
+                    def imageExists = sh(script: 'docker images -q flask-app:latest', returnStdout: true).trim()
                     if (imageExists) {
                         echo "Docker image already exists, skipping build."
                     } else {
-                        bat "docker build --cache-from flask-app:latest -t flask-app:latest ."
+                        sh "docker build --cache-from flask-app:latest -t flask-app:latest ."
                         echo "Docker image built successfully"
                     }
                 }
@@ -39,13 +39,13 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'DockerHubCreds', passwordVariable: 'dockerHubPass', usernameVariable: 'dockerHubUser')]) {
                     script {
-                        def imageAlreadyPushed = bat(script: 'docker manifest inspect ${env.dockerHubUser}/flask-app:latest', returnStatus: true)
+                        def imageAlreadyPushed = sh(script: 'docker manifest inspect ${dockerHubUser}/flask-app:latest > /dev/null 2>&1', returnStatus: true)
                         if (imageAlreadyPushed == 0) {
                             echo "Image already exists in DockerHub, skipping push."
                         } else {
-                            bat "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPass}"
-                            bat "docker image tag flask-app:latest ${env.dockerHubUser}/flask-app:latest"
-                            bat "docker push ${env.dockerHubUser}/flask-app:latest"
+                            sh "echo ${dockerHubPass} | docker login -u ${dockerHubUser} --password-stdin"
+                            sh "docker image tag flask-app:latest ${dockerHubUser}/flask-app:latest"
+                            sh "docker push ${dockerHubUser}/flask-app:latest"
                         }
                     }
                 }
@@ -55,7 +55,7 @@ pipeline {
         stage('Verify Deployment Files') {
             steps {
                 script {
-                    def files = bat(script: 'dir /b k8s', returnStdout: true).trim()
+                    def files = sh(script: 'ls k8s', returnStdout: true).trim()
                     echo "K8s folder files:\n${files}"
 
                     if (!files.contains("deployment.yaml") || !files.contains("service.yaml")) {
@@ -68,12 +68,12 @@ pipeline {
         stage('Apply Kubernetes Deployment') {
             steps {
                 script {
-                    def minikubeStatus = bat(script: 'minikube status', returnStdout: true).trim()
+                    def minikubeStatus = sh(script: 'minikube status', returnStdout: true).trim()
                     if (!minikubeStatus.contains("Running")) {
                         error "Minikube is not running! Cannot apply Kubernetes deployment."
                     } else {
-                        bat 'kubectl apply -f k8s/deployment.yaml'
-                        bat 'kubectl apply -f k8s/service.yaml'
+                        sh 'kubectl apply -f k8s/deployment.yaml'
+                        sh 'kubectl apply -f k8s/service.yaml'
                     }
                 }
             }
@@ -81,19 +81,18 @@ pipeline {
 
         stage('Verify Deployment') {
             steps {
-                bat 'kubectl get pods'
-                bat 'kubectl get svc'
+                sh 'kubectl get pods'
+                sh 'kubectl get svc'
             }
         }
 
         stage('Get Service URL') {
-    steps {
-        script {
-            // Port-forward the service to localhost
-            bat 'kubectl port-forward service/flask-app-service 5000:5000 &'
-            echo "Application is accessible at http://localhost:5000"
+            steps {
+                script {
+                    sh 'nohup kubectl port-forward service/flask-app-service 5000:5000 > /dev/null 2>&1 &'
+                    echo "Application is accessible at http://localhost:5000"
+                }
+            }
         }
-    }
-}
     }
 }
