@@ -40,7 +40,7 @@ pipeline {
 
         stage('Push to DockerHub') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'DockerHubCreds', passwordVariable: 'dockerHubPass', usernameVariable: 'dockerHubUser')]) {
+               withDockerRegistry(credentialsId: 'Docker-Creds', url: ""){
                     script {
                         def imageAlreadyPushed = sh(script: 'docker manifest inspect ${dockerHubUser}/flask-app:latest > /dev/null 2>&1', returnStatus: true)
                         if (imageAlreadyPushed == 0) {
