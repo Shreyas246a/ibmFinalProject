@@ -42,13 +42,12 @@ pipeline {
             steps {
                withDockerRegistry(credentialsId: 'Docker-Creds', url: ""){
                     script {
-                        def imageAlreadyPushed = sh(script: 'docker manifest inspect ${dockerHubUser}/flask-app:latest > /dev/null 2>&1', returnStatus: true)
+                        def imageAlreadyPushed = sh(script: 'docker manifest inspect shreyas246/flask-app:latest > /dev/null 2>&1', returnStatus: true)
                         if (imageAlreadyPushed == 0) {
                             echo "Image already exists in DockerHub, skipping push."
                         } else {
-                            sh "echo ${dockerHubPass} | docker login -u ${dockerHubUser} --password-stdin"
-                            sh "docker image tag flask-app:latest ${dockerHubUser}/flask-app:latest"
-                            sh "docker push ${dockerHubUser}/flask-app:latest"
+                            sh "docker image tag flask-app:latest shreyas246/flask-app:latest"
+                            sh "docker push shreyas246/flask-app:latest"
                         }
                     }
                 }
