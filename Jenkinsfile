@@ -21,7 +21,8 @@ pipeline {
             steps {
                 script {
                     sh"export MINIKUBE_HOME=/var/lib/jenkins"
-                    sh "minikube start driver=none"
+                    sh "minikube delete"
+                    sh "minikube start"
                 }
             }
         }
